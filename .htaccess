@@ -1,88 +1,73 @@
-# Jiménez & Piña Survey Instruments
-# Configuración de Apache
+# /.htaccess
+# Configuración de Apache para Jiménez & Piña Survey Instruments
 
-# Habilitar RewriteEngine
+# Activar RewriteEngine
 RewriteEngine On
 
-# Configuración de seguridad
-Options -Indexes
-Options -MultiViews
+# Redirección a HTTPS (descomentar si tiene SSL)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
-# Configuración de caracteres
-AddDefaultCharset UTF-8
+# Redirección de www a no-www o viceversa
+# RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+# RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
-# Comprensión GZIP
+# Prevenir acceso a archivos sensibles
+<FilesMatch "\.(env|json|lock|md|yml|yaml|ini|log|sh|sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Proteger directorios
+RedirectMatch 403 ^/\.git/
+RedirectMatch 403 ^/vendor/
+RedirectMatch 403 ^/config/
+RedirectMatch 403 ^/install/$ 
+
+# URLs amigables
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^productos/?$ productos.php [L]
+RewriteRule ^productos/([^/]+)/?$ producto-detalle.php?slug=$1 [L]
+RewriteRule ^categoria/([^/]+)/?$ categoria.php?slug=$1 [L]
+RewriteRule ^marca/([^/]+)/?$ marca.php?slug=$1 [L]
+RewriteRule ^blog/?$ blog.php [L]
+RewriteRule ^blog/([^/]+)/?$ blog-post.php?slug=$1 [L]
+RewriteRule ^servicios/?$ servicios.php [L]
+RewriteRule ^nosotros/?$ nosotros.php [L]
+RewriteRule ^contacto/?$ contacto.php [L]
+RewriteRule ^terminos/?$ terminos.php [L]
+RewriteRule ^privacidad/?$ privacidad.php [L]
+RewriteRule ^buscar/?$ buscar.php [L]
+
+# Página de error personalizada
+ErrorDocument 404 /error.php
+
+# Compresión GZIP
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
 </IfModule>
 
-# Headers de seguridad
+# Cache del navegador
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+</IfModule>
+
+# Seguridad adicional
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
-    
-    # Cache para archivos estáticos
-    <FilesMatch "\.(jpg|jpeg|png|gif|ico|css|js|pdf)$">
-        Header set Cache-Control "max-age=2592000, public"
-    </FilesMatch>
 </IfModule>
-
-# Denegar acceso a archivos sensibles
-<FilesMatch "(^\.htaccess|\.htpasswd|\.ini|\.log|\.sh|\.sql|composer\.json|composer\.lock)">
-    Order Allow,Deny
-    Deny from all
-</FilesMatch>
-
-# Denegar acceso a directorios sensibles
-RewriteRule ^(config|includes|logs|vendor)/ - [F,L]
-
-# Redirigir www a sin www
-RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
-RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
-
-# URLs amigables para páginas principales
-RewriteRule ^productos/?$ pages/productos.php [L]
-RewriteRule ^servicios/?$ pages/servicios.php [L]
-RewriteRule ^blog/?$ pages/blog.php [L]
-RewriteRule ^contacto/?$ pages/contacto.php [L]
-RewriteRule ^nosotros/?$ pages/nosotros.php [L]
-RewriteRule ^cotizar/?$ pages/cotizar.php [L]
-
-# URLs amigables para categorías
-RewriteRule ^categoria/([a-zA-Z0-9-]+)/?$ pages/productos.php?categoria=$1 [L]
-RewriteRule ^categoria/([a-zA-Z0-9-]+)/pagina/([0-9]+)/?$ pages/productos.php?categoria=$1&page=$2 [L]
-
-# URLs amigables para marcas
-RewriteRule ^marca/([a-zA-Z0-9-]+)/?$ pages/productos.php?marca=$1 [L]
-RewriteRule ^marca/([a-zA-Z0-9-]+)/pagina/([0-9]+)/?$ pages/productos.php?marca=$1&page=$2 [L]
-
-# URLs amigables para productos
-RewriteRule ^producto/([a-zA-Z0-9-]+)/?$ pages/producto-detalle.php?slug=$1 [L]
-
-# URLs amigables para blog
-RewriteRule ^blog/categoria/([a-zA-Z0-9-]+)/?$ pages/blog.php?categoria=$1 [L]
-RewriteRule ^blog/([a-zA-Z0-9-]+)/?$ pages/blog-post.php?slug=$1 [L]
-RewriteRule ^blog/pagina/([0-9]+)/?$ pages/blog.php?page=$1 [L]
-
-# URLs amigables para búsqueda
-RewriteRule ^buscar/?$ pages/buscar.php [L]
-
-# Panel administrativo
-RewriteRule ^admin/?$ admin/index.php [L]
-
-# Prevenir ejecución de scripts PHP en directorios de uploads
-<IfModule mod_rewrite.c>
-    RewriteRule ^assets/uploads/.*\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$ - [F]
-</IfModule>
-
-# Manejo de errores
-ErrorDocument 400 /error.php?code=400
-ErrorDocument 401 /error.php?code=401
-ErrorDocument 403 /error.php?code=403
-ErrorDocument 404 /error.php?code=404
-ErrorDocument 500 /error.php?code=500
 
 # Configuración PHP
 <IfModule mod_php7.c>
@@ -90,34 +75,4 @@ ErrorDocument 500 /error.php?code=500
     php_value post_max_size 10M
     php_value max_execution_time 300
     php_value max_input_time 300
-    php_value memory_limit 128M
-    php_flag display_errors Off
-    php_flag log_errors On
-    php_value error_log logs/php_error.log
-</IfModule>
-
-# Proteger archivos de configuración adicionales
-<Files "config.php">
-    Order Allow,Deny
-    Deny from all
-</Files>
-
-<Files "database.php">
-    Order Allow,Deny
-    Deny from all
-</Files>
-
-# Bloquear bots maliciosos
-<IfModule mod_setenvif.c>
-    SetEnvIfNoCase User-Agent "^libwww-perl" bad_bot
-    SetEnvIfNoCase User-Agent "^wget" bad_bot
-    SetEnvIfNoCase User-Agent "^curl" bad_bot
-    SetEnvIfNoCase User-Agent "^EmailSiphon" bad_bot
-    SetEnvIfNoCase User-Agent "^EmailWolf" bad_bot
-    SetEnvIfNoCase User-Agent "^ExtractorPro" bad_bot
-    
-    <RequireAll>
-        Require all granted
-        Require not env bad_bot
-    </RequireAll>
 </IfModule>
